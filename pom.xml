@@ -366,10 +366,13 @@
               <settingsFile>src/it/settings.xml</settingsFile>
               <cloneProjectsTo>${project.build.directory}/it-tests</cloneProjectsTo>
               <extraArtifacts>
+		<!--
                 <extraArtifact>org.gwtproject:gwt-servlet:${gwt.version}:jar</extraArtifact>
+		-->
                 <!-- for some reason, org.gwtproject.web.bindery:requestfactory isn't installed,
-                     whereas it's needed by org.gwtproject.gwt:gwt -->
+                     whereas it's needed by org.gwtproject.gwt:gwt 
                 <extraArtifact>org.gwtproject.web.bindery:requestfactory:${gwt.version}:pom</extraArtifact>
+		-->
               </extraArtifacts>
             </configuration>
             <executions>
