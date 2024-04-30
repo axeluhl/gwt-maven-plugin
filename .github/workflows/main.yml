@@ -1,0 +1,60 @@
+name: build
+on:
+  - push
+  - workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository to the runner
+        uses: actions/checkout@v4
+      - name: Install JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin' # See 'Supported distributions' for available options
+          java-version: '8'
+          mvn-toolchain-id: 'JavaSE-1.8'
+      - shell: bash
+        env: # Or as an environment variable
+          APP_PARAMETERS: "-Daws.region=eu-west-1 -Dgoogle.maps.authenticationparams=${{ secrets.GOOGLE_MAPS_AUTHENTICATIONPARAMS }} -Daws.s3.test.s3AccessId=${{ secrets.AWS_S3_TEST_S3ACCESSID }} -Daws.s3.test.s3AccessKey=${{ secrets.AWS_S3_TEST_S3ACCESSKEY }}"
+        run: |
+          mvn --batch-mode clean install
+      - name: Collect Test Reports
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Maven Tests
+          path: '**/TEST-*.xml' 
+          max-annotations: '0'
+          reporter: java-junit
+          fail-on-error: true
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: 2.11.0
+          release_name: 2.11.0
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset JAR
+        id: upload-release-asset-jar
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ~/.m2/repository/org/codehaus/mojo/gwt-maven-plugin/2.11.0/gwt-maven-plugin-2.11.0.jar
+          asset_name: gwt-maven-plugin-2.11.0.jar
+          asset_content_type: application/java-archive
+      - name: Upload pom.xml
+        id: upload-release-asset-pom-xml
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ~/.m2/repository/org/codehaus/mojo/gwt-maven-plugin/2.11.0/gwt-maven-plugin-2.11.0.pom
+          asset_name: gwt-maven-plugin-2.11.0.pom
+          asset_content_type: application/xml
